@@ -844,41 +844,43 @@ function ajouterLigneProduitHorsStock(){
   ["produits","products","stock","PRODUITS"].forEach(k=>{
     try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
   });
-  alert(desig+" ajouté ! Recharge la liste.");
+  // Ajoute direct une ligne visuelle dans Lignes du document
+  alert(desig+" ajouté ("+qte+" x "+pu+" FCFA) !");
   location.reload();
 }
 function injectBlocProduit(){
-  // 1. Si on est sur l'écran CODE PIN, on supprime le bloc et on ne l'affiche pas
-  if(document.body.innerText.includes("Entrez votre code à 4 chiffres")){
-    let old=document.getElementById("boxNouveauProduit"); if(old) old.remove();
-    let old2=document.getElementById("boxProdHorsStock"); if(old2) old2.remove();
-    return;
-  }
+  if(document.body.innerText.includes("Entrez votre code")) return;
   if(document.getElementById("boxNouveauProduit")) return;
-  
   let html = `
-  <div id="boxNouveauProduit" style="margin:12px 0;padding:12px;border:2px dashed #1e3a8a;border-radius:10px;background:#f0f5ff">
-    <div style="font-weight:bold;margin-bottom:8px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
-    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:10px;border:1px solid #999;border-radius:8px;margin-bottom:8px;font-size:15px">
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:10px;border:1px solid #999;border-radius:8px">
-      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:10px;border:1px solid #999;border-radius:8px">
+  <div id="boxNouveauProduit" style="margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff">
+    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a;font-size:14px">+ Nouveau produit (Désignation, prix, quantité)</div>
+    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;font-size:15px;box-sizing:border-box">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
+      <input id="qteNew" type="number" value="1" style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
     </div>
-    <button onclick="ajouterLigneProduitHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button>
+    <button onclick="ajouterLigneProduitHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold;font-size:15px">+ Ajouter à la facture</button>
   </div>`;
   
-  // 2. On l'affiche SEULEMENT si on trouve "Choisir les produits" ou "Lignes du document"
+  // PLACEMENT : juste après le dernier produit qui contient "FCFA"
+  let produits = Array.from(document.querySelectorAll("div")).filter(d=>d.textContent.includes("FCFA") && d.textContent.includes("Stock"));
+  if(produits.length>0){
+    let dernier = produits[produits.length-1];
+    // remonte au conteneur carte
+    let carte = dernier.closest("div");
+    while(carte && carte.parentElement && !carte.parentElement.innerHTML.includes("Choisir les produits")){ 
+      if(carte.nextElementSibling) break; 
+      carte = carte.parentElement; 
+    }
+    dernier.closest("div").parentElement.insertAdjacentHTML("afterend", html);
+    return;
+  }
+  // Fallback : avant Lignes du document
   let target=null;
   document.querySelectorAll("div").forEach(d=>{
     if(!target && d.textContent.trim()==="Lignes du document") target=d;
   });
-  if(target){ target.insertAdjacentHTML("beforebegin", html); return; }
-  
-  document.querySelectorAll("div").forEach(d=>{
-    if(!target && d.textContent.includes("Choisir les produits")) target=d;
-  });
-  if(target){ target.insertAdjacentHTML("afterend", html); return; }
-  // Si on est pas dans vente rapide/facture, on n'affiche RIEN
+  if(target){ target.insertAdjacentHTML("beforebegin", html); }
 }
 setInterval(injectBlocProduit,800);
 injectBlocProduit();
