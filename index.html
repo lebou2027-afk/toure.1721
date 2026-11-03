@@ -834,6 +834,25 @@ async function pdfWA(PDF){
 }
 // --- FIN CORRECTION ---
 </script>
+ <div id="boxNewProd" style="position:fixed;bottom:20px;right:20px;z-index:9999;background:#111;color:#fff;padding:12px;border-radius:10px;display:flex;gap:8px">
+<input id="npName" placeholder="Nom produit" style="padding:8px;border-radius:6px;border:none;width:120px">
+<input id="npPrice" type="number" placeholder="Prix" style="padding:8px;border-radius:6px;border:none;width:80px">
+<button onclick="addNewProd()" style="background:#00c853;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold">+ Ajouter</button>
+</div>
+<script>
+function addNewProd(){
+ let n=document.getElementById('npName').value.trim();
+ let p=parseFloat(document.getElementById('npPrice').value);
+ if(!n||!p) return alert('Nom et prix requis');
+ let prods=JSON.parse(localStorage.getItem('produits')||localStorage.getItem('products')||localStorage.getItem('stock')||'[]');
+ prods.push({id:Date.now(),nom:n,name:n,prix:p,price:p,qte:999,stock:999});
+ localStorage.setItem('produits',JSON.stringify(prods));
+ localStorage.setItem('products',JSON.stringify(prods));
+ localStorage.setItem('stock',JSON.stringify(prods));
+ alert(n+' ajouté ! Recharge la page pour le voir en facturation et vente rapide.');
+ document.getElementById('npName').value=''; document.getElementById('npPrice').value='';
+}
+</script>
 </body>
 </html>
                                                                                                      
