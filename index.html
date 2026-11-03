@@ -841,33 +841,33 @@ function ajouterLigneProduitHorsStock(e){
   let pu = Number(document.getElementById("puNew").value);
   let qte = Number(document.getElementById("qteNew").value) || 1;
   if(!desig || !pu) return alert("Remplis Désignation et Prix");
-  
-  // 1. Stocke le produit pour qu'il existe partout
-  let pr = {id:Date.now(),nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:9999,quantite:9999,ref:"HORS-"+Date.now(),stock:9999};
+  let id = Date.now();
+  let pr = {id:id,nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:9999,quantite:9999,ref:"HORS-"+id,stock:9999};
   ["produits","products","stock","PRODUITS"].forEach(k=>{
     try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
   });
-
-  // 2. Ajoute VISUELLEMENT une ligne dans "Lignes du document" sans recharger
-  let zoneLignes = null;
-  document.querySelectorAll("div").forEach(d=>{
-    if(!zoneLignes && d.textContent.trim()==="Lignes du document") zoneLignes=d;
-  });
-  if(zoneLignes){
-    let ligne = document.createElement("div");
-    ligne.style="display:flex;gap:6px;margin:8px 0;padding:10px;border:1px solid #1e3a8a;border-radius:8px;background:#e8eefc;align-items:center;font-size:14px";
-    ligne.innerHTML = `<div style="flex:2;font-weight:bold">${desig}</div><div style="flex:0.6">x${qte}</div><div style="flex:1">${pu} FCFA</div><div style="flex:1;font-weight:bold;color:#1e3a8a">${pu*qte} FCFA</div><button type="button" onclick="this.parentElement.remove()" style="background:#ff3b30;color:#fff;border:0;padding:4px 8px;border-radius:4px">x</button>`;
-    zoneLignes.parentElement.appendChild(ligne);
-  }
-
-  // 3. Vide les champs, reste sur la page
-  document.getElementById("desigNew").value=""; 
-  document.getElementById("puNew").value=""; 
-  document.getElementById("qteNew").value="1";
-  
-  try{ if(window.calculTotal) calculTotal(); if(window.updateTotal) updateTotal(); }catch(err){}
+  let btnPlus = Array.from(document.querySelectorAll("button")).find(b=>b.textContent.trim()==="+ Ligne");
+  if(btnPlus) btnPlus.click();
+  setTimeout(()=>{
+    let zone=null;
+    document.querySelectorAll("div").forEach(d=>{ if(d.textContent.trim()==="Lignes du document") zone=d.parentElement; });
+    let selects = zone ? zone.querySelectorAll("select") : document.querySelectorAll("select");
+    if(selects.length>0){
+      let lastSelect = selects[selects.length-1];
+      let opt=document.createElement("option"); opt.value=id; opt.text=desig; opt.selected=true;
+      lastSelect.appendChild(opt); lastSelect.value=id;
+      lastSelect.dispatchEvent(new Event('change',{bubbles:true}));
+      let row=lastSelect.closest("div"); 
+      if(row){
+        let inputs=row.querySelectorAll("input");
+        if(inputs[0]){inputs[0].value=qte; inputs[0].dispatchEvent(new Event('input',{bubbles:true}));}
+        if(inputs[1]){inputs[1].value=pu; inputs[1].dispatchEvent(new Event('input',{bubbles:true}));}
+      }
+    }
+    try{ if(window.calculTotal) calculTotal(); if(window.updateTotal) updateTotal(); }catch(e){}
+  },300);
+  document.getElementById("desigNew").value=""; document.getElementById("puNew").value=""; document.getElementById("qteNew").value="1";
 }
-
 function injectBlocProduit(){
   if(document.body.innerText.includes("Entrez votre code à 4 chiffres")){
     let old=document.getElementById("boxNouveauProduit"); if(old) old.remove(); return;
@@ -875,27 +875,22 @@ function injectBlocProduit(){
   if(document.getElementById("boxNouveauProduit")) return;
   let html = `
   <div id="boxNouveauProduit" style="margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff">
-    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a;font-size:14px">+ Nouveau produit (Désignation, prix, quantité)</div>
-    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;font-size:15px;box-sizing:border-box">
+    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
+    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;box-sizing:border-box">
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
-      <input id="qteNew" type="number" value="1" style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px">
+      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #cbd5e1;border-radius:8px">
+      <input id="qteNew" type="number" value="1" style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:8px">
     </div>
-    <button type="button" onclick="ajouterLigneProduitHorsStock(event)" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold;font-size:15px">+ Ajouter à la facture</button>
+    <button type="button" onclick="ajouterLigneProduitHorsStock(event)" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button>
   </div>`;
-  
   let target=null;
   document.querySelectorAll("div").forEach(d=>{
     if(!target && d.textContent.trim()==="Lignes du document") target=d;
   });
-  if(target){ target.insertAdjacentHTML("beforebegin", html); return; }
-  
-  let produits = Array.from(document.querySelectorAll("div")).filter(d=>d.textContent.includes("FCFA") && d.textContent.includes("Stock"));
-  if(produits.length>0){
-    produits[produits.length-1].parentElement.insertAdjacentHTML("afterend", html);
-  }
+  if(target) target.insertAdjacentHTML("beforebegin", html);
 }
 setInterval(injectBlocProduit,800);
 injectBlocProduit();
 </script>
+</body>
 </html>
