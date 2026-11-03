@@ -787,4 +787,32 @@ async function pdfDoc(){
  b.disabled=false;if(!retry)b.textContent=lab;
 }
 render();
-</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}</script>
+<script>
+// --- CORRECTION PDF + WHATSAPP ---
+async function pdfSave(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name || 'facture.pdf';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},1500);
+}
+
+async function pdfWA(PDF){
+  try{ await pdfSave(PDF.blob, PDF.name); }catch(e){}
+  const numFact = (document.querySelector('.dt')?.textContent||PDF.name||'').trim();
+  const txt = `*QUINCAILLERIE GÉNÉRALE TOURE & FRÈRES*%0A`+
+  `Facture: ${encodeURIComponent(numFact)}%0A`+
+  `Client: Client comptoir%0A`+
+  `Merci - PDF téléchargé sur votre téléphone.%0A`+
+  `Dakar +221782216423`;
+  window.open(`https://wa.me/?text=${txt}`,'_blank');
+}
+// --- FIN CORRECTION ---
+</script>
+</body>
+</html>
+                                                                                                     
+                                                                                           
