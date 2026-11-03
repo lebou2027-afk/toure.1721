@@ -837,21 +837,41 @@ async function pdfWA(PDF){
  <div id="boxNewProd" style="position:fixed;bottom:20px;right:20px;z-index:9999;background:#111;color:#fff;padding:12px;border-radius:10px;display:flex;gap:8px">
 <input id="npName" placeholder="Nom produit" style="padding:8px;border-radius:6px;border:none;width:120px">
 <input id="npPrice" type="number" placeholder="Prix" style="padding:8px;border-radius:6px;border:none;width:80px">
-<button onclick="addNewProd()" style="background:#00c853;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold">+ Ajouter</button>
-</div>
 <script>
-function addNewProd(){
- let n=document.getElementById('npName').value.trim();
- let p=parseFloat(document.getElementById('npPrice').value);
- if(!n||!p) return alert('Nom et prix requis');
+function addProdVolant(){
+ let n=prompt("Nom du nouveau produit :");
+ if(!n) return;
+ let p=parseFloat(prompt("Prix de vente :"));
+ if(!p) return alert('Prix invalide');
+ let prod={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999,stock:9999, horsStock:true};
+ // 1. Sauve en stock pour la prochaine fois
  let prods=JSON.parse(localStorage.getItem('produits')||localStorage.getItem('products')||localStorage.getItem('stock')||'[]');
- prods.push({id:Date.now(),nom:n,name:n,prix:p,price:p,qte:999,stock:999});
+ prods.push(prod);
  localStorage.setItem('produits',JSON.stringify(prods));
  localStorage.setItem('products',JSON.stringify(prods));
  localStorage.setItem('stock',JSON.stringify(prods));
- alert(n+' ajouté ! Recharge la page pour le voir en facturation et vente rapide.');
- document.getElementById('npName').value=''; document.getElementById('npPrice').value='';
+ // 2. Ajoute direct à la facture/vente en cours si possible
+ try{
+   if(typeof ajouterProduit === 'function') ajouterProduit(prod);
+   if(typeof addToCart === 'function') addToCart(prod);
+   if(typeof ajouterAuPanier === 'function') ajouterAuPanier(prod);
+ }catch(e){}
+ alert(n+' à '+p+' ajouté et disponible pour cette vente !');
+ location.reload();
 }
+// Injecte un bouton dans facturation et vente rapide automatiquement
+setTimeout(()=>{
+  let btn=`<button onclick="addProdVolant()" style="margin:5px;background:#ff9800;color:#fff;border:none;padding:8px 12px;border-radius:6px;font-weight:bold">+ Produit hors stock</button>`;
+  document.querySelectorAll('button, [onclick*="facture"], [onclick*="vente"]').forEach(el=>{
+    if(el.textContent.toLowerCase().includes('facturation')||el.textContent.toLowerCase().includes('vente')){
+      el.insertAdjacentHTML('afterend', btn);
+    }
+  });
+  // Si on trouve un select produit, ajoute le bouton à côté
+  document.querySelectorAll('select').forEach(s=>{
+    s.insertAdjacentHTML('afterend', btn);
+  });
+},1500);
 </script>
 </body>
 </html>
