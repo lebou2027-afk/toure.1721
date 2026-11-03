@@ -844,35 +844,36 @@ function ajouterProdHorsStock(){
   try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
  });
  document.getElementById("nomProdVolant").value="";document.getElementById("prixProdVolant").value="";
- alert(n+" ajouté à "+p+" FCFA !");
+ alert(n+" ajouté à "+p+" !");
  location.reload();
 }
 function injectBlocProduit(){
  if(document.getElementById("boxProdHorsStock")) return;
  let html=`
- <div id="boxProdHorsStock" style="margin:12px 0;padding:12px;border:1.5px dashed #ff9800;border-radius:10px;background:#fff8ec">
+ <div id="boxProdHorsStock" style="margin:12px;padding:12px;border:2px dashed #ff9800;border-radius:10px;background:#fff8ec;position:relative;z-index:9999">
    <div style="font-weight:bold;margin-bottom:8px;color:#e65100">+ Produit hors stock</div>
    <div style="display:flex;gap:8px;flex-direction:column">
-     <input id="nomProdVolant" placeholder="Nom du produit (ex: Ciment 32.5)" style="padding:10px;border:1px solid #999;border-radius:8px">
-     <input id="prixProdVolant" type="number" placeholder="Prix (ex: 4500)" style="padding:10px;border:1px solid #999;border-radius:8px">
-     <button onclick="ajouterProdHorsStock()" style="background:#ff9800;color:#fff;border:0;padding:10px;border-radius:8px;font-weight:bold">Ajouter et vendre</button>
+     <input id="nomProdVolant" placeholder="Nom du produit" style="padding:12px;border:1px solid #999;border-radius:8px;font-size:16px">
+     <input id="prixProdVolant" type="number" placeholder="Prix" style="padding:12px;border:1px solid #999;border-radius:8px;font-size:16px">
+     <button onclick="ajouterProdHorsStock()" style="background:#ff9800;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold;font-size:16px">Ajouter et vendre</button>
    </div>
  </div>`;
- // On le met juste avant "+ Nouveau client"
- let nouveauClient = document.documentElement.innerHTML.indexOf("+ Nouveau client");
- let cibles = document.querySelectorAll("div");
- for(let div of cibles){
-   if(div.textContent.includes("+ Nouveau client")){
-     div.insertAdjacentHTML("beforebegin", html);
-     break;
+ // Essaie de le mettre avant Nouveau client
+ let trou=false;
+ document.querySelectorAll("div,section,form").forEach(el=>{
+   if(!trou && el.textContent.includes("Nouveau client")){
+     el.insertAdjacentHTML("beforebegin", html); trou=true;
    }
+ });
+ // Si pas trouvé, on le met tout en haut de la page (visible direct)
+ if(!trou){
+   document.body.insertAdjacentHTML("afterbegin", html);
  }
- // fallback dans panier
- let panier = document.querySelector(".panier, [class*='Panier'], #panier");
- if(!document.getElementById("boxProdHorsStock") && panier) panier.insertAdjacentHTML("afterbegin", html);
 }
-setInterval(injectBlocProduit,1000);
+setInterval(injectBlocProduit,800);
 injectBlocProduit();
+setTimeout(injectBlocProduit,1500);
+setTimeout(injectBlocProduit,3000);
 </script>
 </html>
                                                                                                      
