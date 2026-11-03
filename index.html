@@ -834,67 +834,42 @@ async function pdfWA(PDF){
 }
 // --- FIN CORRECTION ---
 </script>
- <script>
-function ajouterLigneProduitHorsStock(e){
-  if(e){ e.preventDefault(); e.stopPropagation(); }
-  let desig=document.getElementById("desigNew").value.trim();
-  let pu=Number(document.getElementById("puNew").value);
-  let qte=Number(document.getElementById("qteNew").value)||1;
-  if(!desig||!pu) return alert("Remplis Désignation et Prix");
-  let id=Date.now();
-  let pr={id:id,nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:qte,quantite:qte,ref:"HORS-"+id,stock:9999};
-  ["produits","products","stock","PRODUITS"].forEach(k=>{try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}});
+<script>
+function ajouterAuPanierHorsStock(){
+  let desig = document.getElementById('desigNew').value.trim();
+  let pu = document.getElementById('puNew').value;
+  let qte = document.getElementById('qteNew').value || 1;
+  if(!desig || !pu){ alert('Remplis'); return; }
   
-  // AJOUT DIRECT DANS PANIER
-  let panierParent=null;
-  document.querySelectorAll("div").forEach(d=>{ if(d.textContent.trim()==="Panier") panierParent=d.parentElement; });
-  if(panierParent){
-    let ligne=document.createElement("div");
-    ligne.style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin:8px 0;border:1px solid #1e3a8a;border-radius:8px;background:#e8eefc";
-    ligne.innerHTML=`<div><b>${desig}</b><br><small>${pu} FCFA</small></div><div><b>${qte} x ${pu*qte} FCFA</b> <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:red;color:#fff;border:0;padding:4px 8px;border-radius:4px;margin-left:8px">x</button></div>`;
-    // insère avant Client
-    let clientDiv=Array.from(panierParent.querySelectorAll("div")).find(x=>x.textContent.trim()==="Client");
-    if(clientDiv) clientDiv.parentElement.insertAdjacentElement("beforebegin", ligne);
-    else panierParent.appendChild(ligne);
+  // Ajoute dans panier visuel
+  let panier = null;
+  document.querySelectorAll('div').forEach(d=>{ if(d.textContent.trim()==='Panier') panier = d.parentElement; });
+  if(panier){
+    let ligne = document.createElement('div');
+    ligne.style = 'display:flex;justify-content:space-between;padding:10px;margin:6px 0;background:#e8eefc;border:1px solid #1e3a8a;border-radius:8px';
+    ligne.innerHTML = '<div><b>'+desig+'</b></div><div>'+qte+' x '+pu+' = <b>'+(qte*pu)+' FCFA</b> <button onclick="this.parentElement.parentElement.remove()" style="background:red;color:#fff;border:0;padding:3px 7px;border-radius:4px">x</button></div>';
+    // Trouve "Client" et mets avant
+    let client = null;
+    panier.querySelectorAll('div').forEach(d=>{ if(d.textContent.trim()==='Client') client=d; });
+    if(client) client.parentElement.insertAdjacentElement('beforebegin', ligne);
+    else panier.appendChild(ligne);
   }
-  document.getElementById("desigNew").value=""; document.getElementById("puNew").value=""; document.getElementById("qteNew").value="1";
-  try{calculTotal();}catch(e){}
+  document.getElementById('desigNew').value='';
+  document.getElementById('puNew').value='';
+  document.getElementById('qteNew').value='1';
 }
 
-function injectBlocProduit(){
-  // Pas sur écran code PIN
-  if(document.body.innerText.includes("Entrez votre code")){ let o=document.getElementById("boxNouveauProduit"); if(o) o.remove(); return; }
-  if(document.getElementById("boxNouveauProduit")) return;
-  
-  let html=`<div id="boxNouveauProduit" style="display:block !important;margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff;position:relative;z-index:9999">
-    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
-    <input id="desigNew" placeholder="Désignation ex: Marteau 1kg" style="width:100%;padding:12px;border:1px solid #999;border-radius:8px;margin-bottom:8px;box-sizing:border-box">
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #999;border-radius:8px">
-      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:12px;border:1px solid #999;border-radius:8px">
-    </div>
-    <button type="button" onclick="ajouterLigneProduitHorsStock(event)" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button>
-  </div>`;
-
-  // TROUVE LE DERNIER PRODUIT AVEC FCFA
-  let produits=Array.from(document.querySelectorAll("div")).filter(d=>d.textContent.includes("FCFA") && d.textContent.includes("Stock"));
-  if(produits.length>0){
-    let dernier=produits[produits.length-1];
-    // remonte 2 niveaux pour être après la carte
-    let cont=dernier;
-    for(let i=0;i<3;i++){ if(cont.parentElement) cont=cont.parentElement; }
-    cont.insertAdjacentHTML("afterend", html);
-    return;
-  }
-  // Fallback
-  let panier=null; document.querySelectorAll("div").forEach(d=>{ if(!panier && d.textContent.trim()==="Panier") panier=d; });
-  if(panier) panier.parentElement.insertAdjacentHTML("beforebegin", html);
-  else document.body.insertAdjacentHTML("beforeend", html);
+function inject(){
+  if(document.getElementById('boxNouveauProduit')) return;
+  if(document.body.innerText.includes('Entrez votre code')) return;
+  let html = '<div id="boxNouveauProduit" style="margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff"><div style="font-weight:bold;margin-bottom:8px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div><input id="desigNew" placeholder="Désignation" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;box-sizing:border-box"><div style="display:flex;gap:8px;margin-bottom:10px"><input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #cbd5e1;border-radius:8px"><input id="qteNew" type="number" value="1" style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:8px"></div><button type="button" onclick="ajouterAuPanierHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button></div>';
+  let prods = Array.from(document.querySelectorAll('div')).filter(d=>d.innerText && d.innerText.includes('FCFA') && d.innerText.includes('Stock :'));
+  if(prods.length>0){ prods[prods.length-1].parentElement.parentElement.insertAdjacentHTML('afterend', html); return; }
+  let t=null; document.querySelectorAll('div').forEach(d=>{ if(d.textContent.trim()==='Lignes du document') t=d; if(!t && d.textContent.trim()==='Panier') t=d; });
+  if(t) t.insertAdjacentHTML('beforebegin', html);
 }
-setInterval(injectBlocProduit,600);
-injectBlocProduit();
-setTimeout(injectBlocProduit,1000);
-setTimeout(injectBlocProduit,2000);
+setInterval(inject, 1000);
+inject();
 </script>
 </body>
 </html>
