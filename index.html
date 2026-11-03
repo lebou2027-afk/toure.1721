@@ -834,24 +834,32 @@ async function pdfWA(PDF){
 }
 // --- FIN CORRECTION ---
 </script>
- <script>
+<script>
 function addProdVolant(){
  let n=prompt("Nom nouveau produit:");if(!n)return;
  let p=Number(prompt("Prix:"));if(!p)return alert("Prix invalide");
- let pr={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999};
- ["produits","products","stock"].forEach(k=>{
-  let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);
-  localStorage.setItem(k,JSON.stringify(a));
+ let pr={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999,quantite:9999};
+ ["produits","products","stock","PRODUITS"].forEach(k=>{
+  try{
+   let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);
+   localStorage.setItem(k,JSON.stringify(a));
+  }catch(e){}
  });
- alert(n+" ajoute a "+p+" et pret pour vente !");
+ alert(n+" ajoute a "+p+" !");
  location.reload();
 }
-setTimeout(()=>{
- let b='<button onclick="addProdVolant()" style="margin:6px;background:#ff9800;color:#fff;border:0;padding:8px 12px;border-radius:6px;font-weight:bold">+ Produit hors stock</button>';
- document.querySelectorAll("select").forEach(s=>s.insertAdjacentHTML("afterend",b));
-},1200);
+function injectBtn(){
+ if(document.getElementById("btnVolant")) return;
+ let b=document.createElement("button");
+ b.id="btnVolant";
+ b.innerHTML="+ Produit hors stock";
+ b.onclick=addProdVolant;
+ b.style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#ff9800;color:#fff;border:0;padding:14px 18px;border-radius:30px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:16px";
+ document.body.appendChild(b);
+}
+setInterval(injectBtn,1000);
+injectBtn();
 </script>
-</body>
 </html>
                                                                                                      
                                                                                            
