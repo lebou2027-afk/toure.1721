@@ -801,14 +801,23 @@ async function pdfSave(blob, name){
 }
 
 async function pdfWA(PDF){
-  try{ await pdfSave(PDF.blob, PDF.name); }catch(e){}
-  const numFact = (document.querySelector('.dt')?.textContent||PDF.name||'').trim();
-  const txt = `*QUINCAILLERIE GÉNÉRALE TOURE & FRÈRES*%0A`+
-  `Facture: ${encodeURIComponent(numFact)}%0A`+
-  `Client: Client comptoir%0A`+
-  `Merci - PDF téléchargé sur votre téléphone.%0A`+
-  `Dakar +221782216423`;
-  window.open(`https://wa.me/?text=${txt}`,'_blank');
+  try{
+    // Crée le fichier PDF pour WhatsApp
+    const file = new File([PDF.blob], PDF.name, {type:'application/pdf'});
+    // Si le téléphone peut partager un fichier
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({
+        files: [file],
+        title: PDF.name,
+        text: 'Facture QUINCAILLERIE TOURE & FRERES'
+      });
+      return; // On a partagé le PDF, on arrête
+    }
+  }catch(e){}
+
+  // Si le partage direct n'est pas possible (vieux téléphone)
+  await pdfSave(PDF.blob, PDF.name);
+  alert('PDF téléchargé ! Maintenant va dans WhatsApp > Trombone 📎 > Document > Choisis le PDF');
 }
 // --- FIN CORRECTION ---
 </script>
