@@ -834,101 +834,67 @@ async function pdfWA(PDF){
 }
 // --- FIN CORRECTION ---
 </script>
-<script>
+ <script>
 function ajouterLigneProduitHorsStock(e){
   if(e){ e.preventDefault(); e.stopPropagation(); }
-  let desig = document.getElementById("desigNew").value.trim();
-  let pu = Number(document.getElementById("puNew").value);
-  let qte = Number(document.getElementById("qteNew").value) || 1;
-  if(!desig || !pu) return alert("Remplis Désignation et Prix");
+  let desig=document.getElementById("desigNew").value.trim();
+  let pu=Number(document.getElementById("puNew").value);
+  let qte=Number(document.getElementById("qteNew").value)||1;
+  if(!desig||!pu) return alert("Remplis Désignation et Prix");
+  let id=Date.now();
+  let pr={id:id,nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:qte,quantite:qte,ref:"HORS-"+id,stock:9999};
+  ["produits","products","stock","PRODUITS"].forEach(k=>{try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}});
   
-  let id = Date.now();
-  let pr = {id:id, nom:desig, name:desig, designation:desig, prix:pu, price:pu, qte:qte, quantite:qte, ref:"HORS-"+id, stock:9999};
-
-  // 1. Stocke le produit
-  ["produits","products","stock","PRODUITS"].forEach(k=>{
-    try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
-  });
-
-  // 2. Ajoute directement au panier - on cherche le conteneur Panier
-  let panierDiv = null;
-  document.querySelectorAll("div").forEach(d=>{
-    if(d.textContent.trim()==="Panier") panierDiv = d.parentElement;
-  });
-  
-  // Essaie d'appeler les vraies fonctions de ton app
-  try{
-    if(typeof ajouterAuPanier==='function'){ ajouterAuPanier(pr,qte); }
-    else if(typeof addToCart==='function'){ addToCart(pr); }
-    else if(typeof ajouterProduitPanier==='function'){ ajouterProduitPanier(pr); }
-  }catch(err){}
-
-  // 3. Si les fonctions n'existent pas, on crée la ligne panier à la main
-  setTimeout(()=>{
-    if(!panierDiv) return;
-    // Supprime le message "Cliquez sur un produit"
-    let msg = Array.from(panierDiv.querySelectorAll("div")).find(x=>x.textContent.includes("Cliquez sur un produit"));
-    if(msg) msg.style.display='none';
-
-    // Crée la ligne comme tes autres produits
-    let ligne = document.createElement("div");
-    ligne.className = "panier-item-hors-stock";
-    ligne.style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin:6px 0;border:1px solid #1e3a8a;border-radius:8px;background:#e8eefc";
-    ligne.innerHTML = `
-      <div style="flex:1"><b>${desig}</b><br><small style="color:#666">Hors stock - ${pu} FCFA</small></div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-weight:bold">${qte} x ${pu}</span>
-        <span style="font-weight:bold;color:#1e3a8a">${pu*qte} FCFA</span>
-        <button type="button" onclick="this.closest('div.panier-item-hors-stock').remove(); try{calculTotal()}catch(e){}" style="background:#ff3b30;color:#fff;border:0;padding:4px 8px;border-radius:4px;margin-left:6px">x</button>
-      </div>
-    `;
-    // Insère juste avant "Client"
-    let clientLabel = Array.from(panierDiv.querySelectorAll("div")).find(x=>x.textContent.trim()==="Client");
-    if(clientLabel) clientLabel.parentElement.insertAdjacentElement("beforebegin", ligne);
-    else panierDiv.appendChild(ligne);
-
-    // Sauve dans le panier localStorage pour la facture
-    ["panier","cart","panierActuel","lignesPanier"].forEach(k=>{
-      try{
-        let a=JSON.parse(localStorage.getItem(k)||"[]");
-        a.push({...pr, quantite:qte, qte:qte});
-        localStorage.setItem(k, JSON.stringify(a));
-      }catch(e){}
-    });
-
-    try{ if(window.calculTotal) calculTotal(); if(window.updateTotal) updateTotal(); if(window.calculerTotal) calculerTotal(); }catch(e){}
-  },100);
-
-  document.getElementById("desigNew").value=""; 
-  document.getElementById("puNew").value=""; 
-  document.getElementById("qteNew").value="1";
+  // AJOUT DIRECT DANS PANIER
+  let panierParent=null;
+  document.querySelectorAll("div").forEach(d=>{ if(d.textContent.trim()==="Panier") panierParent=d.parentElement; });
+  if(panierParent){
+    let ligne=document.createElement("div");
+    ligne.style="display:flex;justify-content:space-between;align-items:center;padding:10px;margin:8px 0;border:1px solid #1e3a8a;border-radius:8px;background:#e8eefc";
+    ligne.innerHTML=`<div><b>${desig}</b><br><small>${pu} FCFA</small></div><div><b>${qte} x ${pu*qte} FCFA</b> <button type="button" onclick="this.parentElement.parentElement.remove()" style="background:red;color:#fff;border:0;padding:4px 8px;border-radius:4px;margin-left:8px">x</button></div>`;
+    // insère avant Client
+    let clientDiv=Array.from(panierParent.querySelectorAll("div")).find(x=>x.textContent.trim()==="Client");
+    if(clientDiv) clientDiv.parentElement.insertAdjacentElement("beforebegin", ligne);
+    else panierParent.appendChild(ligne);
+  }
+  document.getElementById("desigNew").value=""; document.getElementById("puNew").value=""; document.getElementById("qteNew").value="1";
+  try{calculTotal();}catch(e){}
 }
 
 function injectBlocProduit(){
-  if(document.body.innerText.includes("Entrez votre code à 4 chiffres")){
-    let old=document.getElementById("boxNouveauProduit"); if(old) old.remove(); return;
-  }
+  // Pas sur écran code PIN
+  if(document.body.innerText.includes("Entrez votre code")){ let o=document.getElementById("boxNouveauProduit"); if(o) o.remove(); return; }
   if(document.getElementById("boxNouveauProduit")) return;
-  let html = `
-  <div id="boxNouveauProduit" style="margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff">
-    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a;font-size:14px">+ Nouveau produit (Désignation, prix, quantité)</div>
-    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;box-sizing:border-box">
+  
+  let html=`<div id="boxNouveauProduit" style="display:block !important;margin:12px;padding:14px;border:2px dashed #1e3a8a;border-radius:12px;background:#f8faff;position:relative;z-index:9999">
+    <div style="font-weight:bold;margin-bottom:10px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
+    <input id="desigNew" placeholder="Désignation ex: Marteau 1kg" style="width:100%;padding:12px;border:1px solid #999;border-radius:8px;margin-bottom:8px;box-sizing:border-box">
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #cbd5e1;border-radius:8px">
-      <input id="qteNew" type="number" value="1" style="flex:1;padding:12px;border:1px solid #cbd5e1;border-radius:8px">
+      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:12px;border:1px solid #999;border-radius:8px">
+      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:12px;border:1px solid #999;border-radius:8px">
     </div>
     <button type="button" onclick="ajouterLigneProduitHorsStock(event)" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:13px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button>
   </div>`;
 
-  // Place juste en dessous des produits, au dessus du Panier
-  let panier = null;
-  document.querySelectorAll("div").forEach(d=>{
-    if(!panier && d.textContent.trim()==="Panier") panier = d.parentElement;
-  });
-  if(panier) panier.insertAdjacentHTML("beforebegin", html);
+  // TROUVE LE DERNIER PRODUIT AVEC FCFA
+  let produits=Array.from(document.querySelectorAll("div")).filter(d=>d.textContent.includes("FCFA") && d.textContent.includes("Stock"));
+  if(produits.length>0){
+    let dernier=produits[produits.length-1];
+    // remonte 2 niveaux pour être après la carte
+    let cont=dernier;
+    for(let i=0;i<3;i++){ if(cont.parentElement) cont=cont.parentElement; }
+    cont.insertAdjacentHTML("afterend", html);
+    return;
+  }
+  // Fallback
+  let panier=null; document.querySelectorAll("div").forEach(d=>{ if(!panier && d.textContent.trim()==="Panier") panier=d; });
+  if(panier) panier.parentElement.insertAdjacentHTML("beforebegin", html);
+  else document.body.insertAdjacentHTML("beforeend", html);
 }
-setInterval(injectBlocProduit,800);
+setInterval(injectBlocProduit,600);
 injectBlocProduit();
+setTimeout(injectBlocProduit,1000);
+setTimeout(injectBlocProduit,2000);
 </script>
 </body>
 </html>
