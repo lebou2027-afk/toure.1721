@@ -840,75 +840,47 @@ function ajouterLigneProduitHorsStock(){
   let pu = Number(document.getElementById("puNew").value);
   let qte = Number(document.getElementById("qteNew").value) || 1;
   if(!desig || !pu) return alert("Remplis Désignation et Prix");
-
-  // 1. On l'ajoute en stock pour qu'il existe
   let pr = {id:Date.now(),nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:9999,quantite:9999,ref:"HORS-"+Date.now(),stock:9999};
   ["produits","products","stock","PRODUITS"].forEach(k=>{
     try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
   });
-
-  // 2. On essaie de cliquer sur "+ Ligne" pour créer une nouvelle ligne
-  let btnLigne = Array.from(document.querySelectorAll("button")).find(b=>b.textContent.includes("+ Ligne"));
-  if(btnLigne) btnLigne.click();
-
-  // 3. On remplit la dernière ligne de "Lignes du document"
-  setTimeout(()=>{
-    let lignes = document.querySelectorAll("input");
-    // on prend les 2 derniers inputs QTE et PRIX de la dernière ligne
-    let inputsQte = document.querySelectorAll("input[type='number'], input");
-    // Simplifié : on crée une ligne visible directement dans le tableau
-    let container = document.querySelector("table") || document.getElementById("lignesDoc") || document.body;
-    // On cherche le conteneur des lignes
-    let zoneLignes = document.evaluate("//div[contains(text(),'Lignes du document')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
-    if(zoneLignes && zoneLignes.nextElementSibling){
-        let table = zoneLignes.nextElementSibling;
-        // Ajoute une ligne custom
-        let div = document.createElement("div");
-        div.style="display:flex;gap:6px;margin-top:6px;padding:8px;border:1px solid #0d2a7a;border-radius:8px;background:#e8eefc;align-items:center";
-        div.innerHTML = `<div style="flex:2;font-weight:bold">${desig}</div><div style="flex:0.5">x${qte}</div><div style="flex:1">${pu} F</div><div style="flex:1;font-weight:bold">${pu*qte} F</div><button onclick="this.parentElement.remove()" style="background:red;color:#fff;border:0;padding:4px 8px;border-radius:4px">x</button>`;
-        table.parentElement.appendChild(div);
-    }
-    // Recalcule total si fonction existe
-    try{ if(window.calculTotal) calculTotal(); if(window.updateTotal) updateTotal(); }catch(e){}
-    alert(desig+" ajouté ("+qte+" x "+pu+")");
-    document.getElementById("desigNew").value=""; document.getElementById("puNew").value=""; document.getElementById("qteNew").value="1";
-  },300);
+  alert(desig+" ajouté ! Recharge la liste.");
+  location.reload();
 }
-
 function injectBlocProduit(){
+  // 1. Si on est sur l'écran CODE PIN, on supprime le bloc et on ne l'affiche pas
+  if(document.body.innerText.includes("Entrez votre code à 4 chiffres")){
+    let old=document.getElementById("boxNouveauProduit"); if(old) old.remove();
+    let old2=document.getElementById("boxProdHorsStock"); if(old2) old2.remove();
+    return;
+  }
   if(document.getElementById("boxNouveauProduit")) return;
+  
   let html = `
   <div id="boxNouveauProduit" style="margin:12px 0;padding:12px;border:2px dashed #1e3a8a;border-radius:10px;background:#f0f5ff">
     <div style="font-weight:bold;margin-bottom:8px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
-    <input id="desigNew" placeholder="Désignation (ex: Ciment 32.5 hors stock)" style="width:100%;padding:10px;border:1px solid #999;border-radius:8px;margin-bottom:8px;font-size:15px">
+    <input id="desigNew" placeholder="Désignation" style="width:100%;padding:10px;border:1px solid #999;border-radius:8px;margin-bottom:8px;font-size:15px">
     <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:10px;border:1px solid #999;border-radius:8px;font-size:15px">
-      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:10px;border:1px solid #999;border-radius:8px;font-size:15px">
+      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:10px;border:1px solid #999;border-radius:8px">
+      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:10px;border:1px solid #999;border-radius:8px">
     </div>
-    <button onclick="ajouterLigneProduitHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold;font-size:15px">+ Ajouter à la facture</button>
+    <button onclick="ajouterLigneProduitHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold">+ Ajouter à la facture</button>
   </div>`;
   
-  // On le place JUSTE AU DESSUS de "Lignes du document" ou "Choisir les produits"
-  let placed = false;
+  // 2. On l'affiche SEULEMENT si on trouve "Choisir les produits" ou "Lignes du document"
+  let target=null;
   document.querySelectorAll("div").forEach(d=>{
-    if(!placed && d.textContent.trim() === "Lignes du document"){
-      d.insertAdjacentHTML("beforebegin", html); placed=true;
-    }
+    if(!target && d.textContent.trim()==="Lignes du document") target=d;
   });
-  if(!placed){
-    document.querySelectorAll("div").forEach(d=>{
-      if(!placed && d.textContent.includes("Choisir les produits")){
-        d.insertAdjacentHTML("afterend", html); placed=true;
-      }
-    });
-  }
-  if(!placed) document.body.insertAdjacentHTML("afterbegin", html);
+  if(target){ target.insertAdjacentHTML("beforebegin", html); return; }
+  
+  document.querySelectorAll("div").forEach(d=>{
+    if(!target && d.textContent.includes("Choisir les produits")) target=d;
+  });
+  if(target){ target.insertAdjacentHTML("afterend", html); return; }
+  // Si on est pas dans vente rapide/facture, on n'affiche RIEN
 }
-
 setInterval(injectBlocProduit,800);
 injectBlocProduit();
-setTimeout(injectBlocProduit,1500);
 </script>
 </html>
-                                                                                                     
-                                                                                           
