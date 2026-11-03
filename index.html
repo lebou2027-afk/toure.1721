@@ -835,45 +835,79 @@ async function pdfWA(PDF){
 // --- FIN CORRECTION ---
 </script>
 <script>
-function ajouterProdHorsStock(){
- let n=document.getElementById("nomProdVolant").value.trim();
- let p=Number(document.getElementById("prixProdVolant").value);
- if(!n||!p) return alert("Mets nom et prix");
- let pr={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999,quantite:9999,ref:"HORS-"+Date.now()};
- ["produits","products","stock","PRODUITS"].forEach(k=>{
-  try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
- });
- document.getElementById("nomProdVolant").value="";document.getElementById("prixProdVolant").value="";
- alert(n+" ajouté à "+p+" !");
- location.reload();
+function ajouterLigneProduitHorsStock(){
+  let desig = document.getElementById("desigNew").value.trim();
+  let pu = Number(document.getElementById("puNew").value);
+  let qte = Number(document.getElementById("qteNew").value) || 1;
+  if(!desig || !pu) return alert("Remplis Désignation et Prix");
+
+  // 1. On l'ajoute en stock pour qu'il existe
+  let pr = {id:Date.now(),nom:desig,name:desig,designation:desig,prix:pu,price:pu,qte:9999,quantite:9999,ref:"HORS-"+Date.now(),stock:9999};
+  ["produits","products","stock","PRODUITS"].forEach(k=>{
+    try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
+  });
+
+  // 2. On essaie de cliquer sur "+ Ligne" pour créer une nouvelle ligne
+  let btnLigne = Array.from(document.querySelectorAll("button")).find(b=>b.textContent.includes("+ Ligne"));
+  if(btnLigne) btnLigne.click();
+
+  // 3. On remplit la dernière ligne de "Lignes du document"
+  setTimeout(()=>{
+    let lignes = document.querySelectorAll("input");
+    // on prend les 2 derniers inputs QTE et PRIX de la dernière ligne
+    let inputsQte = document.querySelectorAll("input[type='number'], input");
+    // Simplifié : on crée une ligne visible directement dans le tableau
+    let container = document.querySelector("table") || document.getElementById("lignesDoc") || document.body;
+    // On cherche le conteneur des lignes
+    let zoneLignes = document.evaluate("//div[contains(text(),'Lignes du document')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    if(zoneLignes && zoneLignes.nextElementSibling){
+        let table = zoneLignes.nextElementSibling;
+        // Ajoute une ligne custom
+        let div = document.createElement("div");
+        div.style="display:flex;gap:6px;margin-top:6px;padding:8px;border:1px solid #0d2a7a;border-radius:8px;background:#e8eefc;align-items:center";
+        div.innerHTML = `<div style="flex:2;font-weight:bold">${desig}</div><div style="flex:0.5">x${qte}</div><div style="flex:1">${pu} F</div><div style="flex:1;font-weight:bold">${pu*qte} F</div><button onclick="this.parentElement.remove()" style="background:red;color:#fff;border:0;padding:4px 8px;border-radius:4px">x</button>`;
+        table.parentElement.appendChild(div);
+    }
+    // Recalcule total si fonction existe
+    try{ if(window.calculTotal) calculTotal(); if(window.updateTotal) updateTotal(); }catch(e){}
+    alert(desig+" ajouté ("+qte+" x "+pu+")");
+    document.getElementById("desigNew").value=""; document.getElementById("puNew").value=""; document.getElementById("qteNew").value="1";
+  },300);
 }
+
 function injectBlocProduit(){
- if(document.getElementById("boxProdHorsStock")) return;
- let html=`
- <div id="boxProdHorsStock" style="margin:12px;padding:12px;border:2px dashed #ff9800;border-radius:10px;background:#fff8ec;position:relative;z-index:9999">
-   <div style="font-weight:bold;margin-bottom:8px;color:#e65100">+ Produit hors stock</div>
-   <div style="display:flex;gap:8px;flex-direction:column">
-     <input id="nomProdVolant" placeholder="Nom du produit" style="padding:12px;border:1px solid #999;border-radius:8px;font-size:16px">
-     <input id="prixProdVolant" type="number" placeholder="Prix" style="padding:12px;border:1px solid #999;border-radius:8px;font-size:16px">
-     <button onclick="ajouterProdHorsStock()" style="background:#ff9800;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold;font-size:16px">Ajouter et vendre</button>
-   </div>
- </div>`;
- // Essaie de le mettre avant Nouveau client
- let trou=false;
- document.querySelectorAll("div,section,form").forEach(el=>{
-   if(!trou && el.textContent.includes("Nouveau client")){
-     el.insertAdjacentHTML("beforebegin", html); trou=true;
-   }
- });
- // Si pas trouvé, on le met tout en haut de la page (visible direct)
- if(!trou){
-   document.body.insertAdjacentHTML("afterbegin", html);
- }
+  if(document.getElementById("boxNouveauProduit")) return;
+  let html = `
+  <div id="boxNouveauProduit" style="margin:12px 0;padding:12px;border:2px dashed #1e3a8a;border-radius:10px;background:#f0f5ff">
+    <div style="font-weight:bold;margin-bottom:8px;color:#1e3a8a">+ Nouveau produit (Désignation, prix, quantité)</div>
+    <input id="desigNew" placeholder="Désignation (ex: Ciment 32.5 hors stock)" style="width:100%;padding:10px;border:1px solid #999;border-radius:8px;margin-bottom:8px;font-size:15px">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <input id="puNew" type="number" placeholder="Prix unitaire" style="flex:2;padding:10px;border:1px solid #999;border-radius:8px;font-size:15px">
+      <input id="qteNew" type="number" value="1" placeholder="Qté" style="flex:1;padding:10px;border:1px solid #999;border-radius:8px;font-size:15px">
+    </div>
+    <button onclick="ajouterLigneProduitHorsStock()" style="width:100%;background:#1e3a8a;color:#fff;border:0;padding:12px;border-radius:8px;font-weight:bold;font-size:15px">+ Ajouter à la facture</button>
+  </div>`;
+  
+  // On le place JUSTE AU DESSUS de "Lignes du document" ou "Choisir les produits"
+  let placed = false;
+  document.querySelectorAll("div").forEach(d=>{
+    if(!placed && d.textContent.trim() === "Lignes du document"){
+      d.insertAdjacentHTML("beforebegin", html); placed=true;
+    }
+  });
+  if(!placed){
+    document.querySelectorAll("div").forEach(d=>{
+      if(!placed && d.textContent.includes("Choisir les produits")){
+        d.insertAdjacentHTML("afterend", html); placed=true;
+      }
+    });
+  }
+  if(!placed) document.body.insertAdjacentHTML("afterbegin", html);
 }
+
 setInterval(injectBlocProduit,800);
 injectBlocProduit();
 setTimeout(injectBlocProduit,1500);
-setTimeout(injectBlocProduit,3000);
 </script>
 </html>
                                                                                                      
