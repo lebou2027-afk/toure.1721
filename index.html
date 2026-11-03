@@ -835,30 +835,44 @@ async function pdfWA(PDF){
 // --- FIN CORRECTION ---
 </script>
 <script>
-function addProdVolant(){
- let n=prompt("Nom nouveau produit:");if(!n)return;
- let p=Number(prompt("Prix:"));if(!p)return alert("Prix invalide");
- let pr={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999,quantite:9999};
+function ajouterProdHorsStock(){
+ let n=document.getElementById("nomProdVolant").value.trim();
+ let p=Number(document.getElementById("prixProdVolant").value);
+ if(!n||!p) return alert("Mets nom et prix");
+ let pr={id:Date.now(),nom:n,name:n,prix:p,price:p,qte:9999,quantite:9999,ref:"HORS-"+Date.now()};
  ["produits","products","stock","PRODUITS"].forEach(k=>{
-  try{
-   let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);
-   localStorage.setItem(k,JSON.stringify(a));
-  }catch(e){}
+  try{let a=JSON.parse(localStorage.getItem(k)||"[]");a.push(pr);localStorage.setItem(k,JSON.stringify(a));}catch(e){}
  });
- alert(n+" ajoute a "+p+" !");
+ document.getElementById("nomProdVolant").value="";document.getElementById("prixProdVolant").value="";
+ alert(n+" ajouté à "+p+" FCFA !");
  location.reload();
 }
-function injectBtn(){
- if(document.getElementById("btnVolant")) return;
- let b=document.createElement("button");
- b.id="btnVolant";
- b.innerHTML="+ Produit hors stock";
- b.onclick=addProdVolant;
- b.style="position:fixed;bottom:20px;right:20px;z-index:99999;background:#ff9800;color:#fff;border:0;padding:14px 18px;border-radius:30px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,0.3);font-size:16px";
- document.body.appendChild(b);
+function injectBlocProduit(){
+ if(document.getElementById("boxProdHorsStock")) return;
+ let html=`
+ <div id="boxProdHorsStock" style="margin:12px 0;padding:12px;border:1.5px dashed #ff9800;border-radius:10px;background:#fff8ec">
+   <div style="font-weight:bold;margin-bottom:8px;color:#e65100">+ Produit hors stock</div>
+   <div style="display:flex;gap:8px;flex-direction:column">
+     <input id="nomProdVolant" placeholder="Nom du produit (ex: Ciment 32.5)" style="padding:10px;border:1px solid #999;border-radius:8px">
+     <input id="prixProdVolant" type="number" placeholder="Prix (ex: 4500)" style="padding:10px;border:1px solid #999;border-radius:8px">
+     <button onclick="ajouterProdHorsStock()" style="background:#ff9800;color:#fff;border:0;padding:10px;border-radius:8px;font-weight:bold">Ajouter et vendre</button>
+   </div>
+ </div>`;
+ // On le met juste avant "+ Nouveau client"
+ let nouveauClient = document.documentElement.innerHTML.indexOf("+ Nouveau client");
+ let cibles = document.querySelectorAll("div");
+ for(let div of cibles){
+   if(div.textContent.includes("+ Nouveau client")){
+     div.insertAdjacentHTML("beforebegin", html);
+     break;
+   }
+ }
+ // fallback dans panier
+ let panier = document.querySelector(".panier, [class*='Panier'], #panier");
+ if(!document.getElementById("boxProdHorsStock") && panier) panier.insertAdjacentHTML("afterbegin", html);
 }
-setInterval(injectBtn,1000);
-injectBtn();
+setInterval(injectBlocProduit,1000);
+injectBlocProduit();
 </script>
 </html>
                                                                                                      
