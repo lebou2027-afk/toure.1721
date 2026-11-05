@@ -871,5 +871,34 @@ function inject(){
 setInterval(inject, 1000);
 inject();
 </script>
+ <style>
+/* === NOM + INFOS ENTREPRISE AGRANDIS === */
+.doc .eh .en{
+  font-size:min(6.5cqw,38px) !important;
+  line-height:1.05 !important;
+  font-weight:900 !important;
+}
+.doc .eh .eb{
+  font-size:min(5.2cqw,19px) !important;
+  line-height:1.45 !important;
+  font-weight:800 !important;
+}
+.doc .eh .ei{
+  font-size:15px !important;
+  line-height:1.4 !important;
+}
+.doc .eh .dsl{font-size:15px !important}
+.doc .eh .eb div{white-space:normal !important}
+@media screen and (max-width:700px){
+  .doc .eh .en{font-size:min(6.5cqw,21px) !important}
+  .doc .eh .eb{font-size:13.5px !important}
+  .doc .eh .ei{font-size:12.5px !important}
+}
+@media print{
+  .doc .eh .en{font-size:min(6.5cqw,32px) !important}
+  .doc .eh .eb{font-size:15px !important}
+  .doc .eh .ei{font-size:13px !important}
+}
+</style>
 </body>
 </html>
