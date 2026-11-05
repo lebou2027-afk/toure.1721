@@ -900,5 +900,19 @@ inject();
   .doc .eh .ei{font-size:13px !important}
 }
 </style>
+ <script>
+// Force la taille, même si la facture recharge l'ancien style
+setInterval(function(){
+  document.querySelectorAll('.doc .eh .en').forEach(function(e){
+    e.style.setProperty('font-size','min(6.5cqw,38px)','important');
+  });
+  document.querySelectorAll('.doc .eh .eb').forEach(function(e){
+    e.style.setProperty('font-size','min(5.2cqw,19px)','important');
+  });
+  document.querySelectorAll('.doc .eh .ei').forEach(function(e){
+    e.style.setProperty('font-size','15px','important');
+  });
+}, 500);
+</script>
 </body>
 </html>
