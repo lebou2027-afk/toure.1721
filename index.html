@@ -901,18 +901,31 @@ inject();
 }
 </style>
  <script>
-// Force la taille, même si la facture recharge l'ancien style
-setInterval(function(){
-  document.querySelectorAll('.doc .eh .en').forEach(function(e){
-    e.style.setProperty('font-size','min(6.5cqw,38px)','important');
+// Force la taille aussi DANS la facture (iframe)
+function forceTaille(){
+  var docs = [document];
+  document.querySelectorAll('iframe').forEach(function(f){
+    try{ if(f.contentDocument) docs.push(f.contentDocument); }catch(e){}
   });
-  document.querySelectorAll('.doc .eh .eb').forEach(function(e){
-    e.style.setProperty('font-size','min(5.2cqw,19px)','important');
+  docs.forEach(function(d){
+    d.querySelectorAll('.doc .eh .en').forEach(function(e){
+      e.style.setProperty('font-size','min(6.5cqw,38px)','important');
+      e.style.setProperty('line-height','1.05','important');
+    });
+    d.querySelectorAll('.doc .eh .eb').forEach(function(e){
+      e.style.setProperty('font-size','min(5.2cqw,19px)','important');
+    });
+    d.querySelectorAll('.doc .eh .ei').forEach(function(e){
+      e.style.setProperty('font-size','15px','important');
+    });
+    // Au cas où c'est un autre nom de classe
+    d.querySelectorAll('.eh .en').forEach(function(e){
+      e.style.setProperty('font-size','min(6.5cqw,38px)','important');
+    });
   });
-  document.querySelectorAll('.doc .eh .ei').forEach(function(e){
-    e.style.setProperty('font-size','15px','important');
-  });
-}, 500);
+}
+setInterval(forceTaille, 300);
+forceTaille();
 </script>
 </body>
 </html>
